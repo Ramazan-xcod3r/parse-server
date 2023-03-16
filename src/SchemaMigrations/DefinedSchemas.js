@@ -35,12 +35,25 @@ export class DefinedSchemas {
   }
 
   async saveSchemaToDB(schema: Parse.Schema): Promise<void> {
+    const fields = schema._fields;
+    const pointerFields = [];
+    for (const field in fields) {
+      const type = fields[field].type;
+      if (type === 'Pointer') {
+        pointerFields.push(field);
+      }
+    }
     const payload = {
       className: schema.className,
       fields: schema._fields,
       indexes: schema._indexes,
       classLevelPermissions: schema._clp,
     };
+    payload.indexes = { ...schema._indexes };
+    for (const field of pointerFields) {
+      const indexName = `${field}_1`;
+      payload.indexes[indexName] = { [field]: 1 };
+    }
     await internalCreateSchema(schema.className, payload, this.config);
     this.resetSchemaOps(schema);
   }

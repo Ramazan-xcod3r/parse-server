@@ -327,6 +327,28 @@ describe('DefinedSchemas', () => {
   });
 
   describe('Indexes', () => {
+    it('should create index for Pointer type field', async () => {
+      const schema = new Parse.Schema('Test');
+      schema.addPointer('pointerField', '_User');
+      await schema.save();
+
+      const newSchema = await new Parse.Schema('Test').get();
+      expect(newSchema.indexes).toEqual({ pointerField_1: { pointerField: 1 } });
+    });
+    it('should create new index with _p_ prefix', async () => {
+      const server = await reconfigureServer();
+
+      const indexes = { recipient: { recipient: 1 } };
+
+      const schemas = {
+        definitions: [{ className: 'Test', fields: { recipient: { type: 'Pointer' } }, indexes }],
+      };
+      await new DefinedSchemas(schemas, server.config).execute();
+
+      const schema = await new Parse.Schema('Test').get();
+      cleanUpIndexes(schema);
+      expect(schema.indexes).toEqual(indexes);
+    });
     it('should create new indexes', async () => {
       const server = await reconfigureServer();
 
