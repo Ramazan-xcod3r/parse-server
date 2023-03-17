@@ -35,6 +35,15 @@ export class DefinedSchemas {
   }
 
   async saveSchemaToDB(schema: Parse.Schema): Promise<void> {
+    const pointerFields = Object.keys(schema._fields).filter(
+      key => schema._fields[key].type === 'Pointer'
+    );
+    pointerFields.forEach(field => {
+      if (schema._indexes[field]) {
+        schema._indexes['_p_' + field] = schema._indexes[field];
+        delete schema._indexes[field];
+      }
+    });
     const payload = {
       className: schema.className,
       fields: schema._fields,
